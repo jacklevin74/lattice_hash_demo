@@ -6,7 +6,7 @@ Simple demo benchmarking of a 2048-byte lattice hash using the `@noble/hashes` B
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/lattice-hash-demo.git
+git clone https://github.com/jacklevin74/lattice_hash_demo
 cd lattice-hash-demo
 
 # Install dependencies

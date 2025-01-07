@@ -30,8 +30,7 @@ Final Combined Hash (first 16 chars): e0a5f6b3e1fa4b1a
 Verification: PASS ✅
 
 # If you want to run demo in RUST
-# Note Rust program will also test shuffling of accounts before add/remove test
-# verifying final hashes
+# Random account add/remove will also be tested 
 
 0. cd rust/lattice_hash_demo
 

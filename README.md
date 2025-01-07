@@ -1,4 +1,4 @@
-# Lattice Hash Demo
+# Little Lattice Hash Demo
 
 Simple demo benchmarking of a 2048-byte lattice hash using the `@noble/hashes` BLAKE3 implementation.
 

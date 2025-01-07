@@ -1,0 +1,14 @@
+{
+  "name": "lattice-hash",
+  "version": "1.0.0",
+  "description": "Benchmarking lattice hash with @noble/hashes (Blake3)",
+  "main": "lattice_hash_demo.js",
+  "scripts": {
+    "start": "node lattice_hash_demo.js"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.4.1",
+    "bs58": "^5.0.0"
+  }
+}
+

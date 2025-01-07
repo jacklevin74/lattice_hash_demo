@@ -1,9 +1,7 @@
-use blake3::Hasher;
+use blake3::{Hasher};
 use bs58;
-use rand::Rng;
-use std::env;
+use rand::{seq::SliceRandom, Rng};
 use std::time::Instant;
-use hex;
 
 const LTHASH_LEN: usize = 2048; // 2048 bytes for the Lattice Hash
 
@@ -40,35 +38,27 @@ impl LtHash {
     }
 
     fn add(a: &[u8], b: &[u8]) -> Vec<u8> {
-        a.chunks_exact(2)
-            .zip(b.chunks_exact(2))
-            .map(|(x, y)| {
-                let val_a = u16::from_le_bytes([x[0], x[1]]);
-                let val_b = u16::from_le_bytes([y[0], y[1]]);
-                (val_a.wrapping_add(val_b)).to_le_bytes()
-            })
-            .flatten()
+        a.iter()
+            .zip(b)
+            .map(|(x, y)| ((x.wrapping_add(*y)) & 0xFF) as u8)
             .collect()
     }
 
     fn sub(a: &[u8], b: &[u8]) -> Vec<u8> {
-        a.chunks_exact(2)
-            .zip(b.chunks_exact(2))
-            .map(|(x, y)| {
-                let val_a = u16::from_le_bytes([x[0], x[1]]);
-                let val_b = u16::from_le_bytes([y[0], y[1]]);
-                (val_a.wrapping_sub(val_b)).to_le_bytes()
-            })
-            .flatten()
+        a.iter()
+            .zip(b)
+            .map(|(x, y)| ((x.wrapping_sub(*y)) & 0xFF) as u8)
             .collect()
     }
 
     fn out(hash: &[u8]) -> String {
-        let hash_result = blake3::hash(hash);
-        hex::encode(&hash_result.as_bytes()[0..16]) // Return the first 16 bytes as a hex string
+        let truncated = blake3::hash(hash); // Save hash to extend lifetime
+        let truncated_hash = truncated.as_bytes(); // Borrow it safely
+        hex::encode(&truncated_hash[0..16]) // Return the first 16 bytes as a hex string
     }
 }
 
+#[derive(Clone)] // Deriving `Clone` to enable cloning
 struct Account {
     lamports: u64,
     data: Vec<u8>,
@@ -106,13 +96,7 @@ fn compute_lt_hash(account: &Account) -> Vec<u8> {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let num_accounts: usize = if args.len() > 1 {
-        args[1].parse().unwrap_or(10_000) // Default to 10,000 if parsing fails
-    } else {
-        10_000 // Default number of accounts
-    };
-
+    let num_accounts = 10_000;
     let accounts: Vec<Account> = (0..num_accounts).map(|_| Account::generate_random()).collect();
 
     println!("\n--- Lattice Hash Test for {num_accounts} Accounts ---");
@@ -131,35 +115,50 @@ fn main() {
     let initial_combined_hash_hex = LtHash::out(&combined_hash);
     println!("Initial Combined Hash (first 16 chars): {}", initial_combined_hash_hex);
 
-    // Remove the last 50 accounts
-    let start_remove = Instant::now();
-    let last_50_accounts = &accounts[(num_accounts - 50)..];
-    for account in last_50_accounts {
-        let hash = compute_lt_hash(account);
-        combined_hash = LtHash::sub(&combined_hash, &hash);
-    }
-    let elapsed_remove = start_remove.elapsed();
-    println!("Time for Removing Last 50 Accounts: {:?}", elapsed_remove);
+    // Take the last 50 accounts to test
+    let last_50_accounts: Vec<_> = accounts[(num_accounts - 50)..].to_vec();
 
-    let after_removal_hash_hex = LtHash::out(&combined_hash);
-    println!("Hash after Removing Last 50 Accounts (first 16 chars): {}", after_removal_hash_hex);
+    for i in 1..=5 {
+        println!("\n--- Iteration {i}: Adding and Removing the Same 50 Accounts ---");
 
-    // Add the last 50 accounts back
-    let start_add_back = Instant::now();
-    for account in last_50_accounts {
-        let hash = compute_lt_hash(account);
-        combined_hash = LtHash::add(&combined_hash, &hash);
-    }
-    let elapsed_add_back = start_add_back.elapsed();
-    println!("Time for Adding Last 50 Accounts Back: {:?}", elapsed_add_back);
+        // Shuffle accounts in a random order
+        let mut shuffled_accounts = last_50_accounts.clone();
+        shuffled_accounts.shuffle(&mut rand::thread_rng());
 
-    let final_combined_hash_hex = LtHash::out(&combined_hash);
-    println!("Final Combined Hash (first 16 chars): {}", final_combined_hash_hex);
+        println!("Order of accounts for iteration {i}:");
+        for (index, account) in shuffled_accounts.iter().enumerate().take(3) {
+            println!("Account {}: pubkey prefix: {}", index + 1, &account.pubkey[..6]);
+        }
 
-    if initial_combined_hash_hex == final_combined_hash_hex {
-        println!("\nVerification: PASS ✅");
-    } else {
-        println!("\nVerification: FAIL ❌");
+        // Remove accounts
+        let start_remove = Instant::now();
+        for account in &shuffled_accounts {
+            let hash = compute_lt_hash(account);
+            combined_hash = LtHash::sub(&combined_hash, &hash);
+        }
+        let elapsed_remove = start_remove.elapsed();
+        println!("Time for Removing Accounts in Iteration {i}: {:?}", elapsed_remove);
+
+        let after_removal_hash_hex = LtHash::out(&combined_hash);
+        println!("Hash after Removing Accounts (first 16 chars): {}", after_removal_hash_hex);
+
+        // Add accounts back
+        let start_add_back = Instant::now();
+        for account in &shuffled_accounts {
+            let hash = compute_lt_hash(account);
+            combined_hash = LtHash::add(&combined_hash, &hash);
+        }
+        let elapsed_add_back = start_add_back.elapsed();
+        println!("Time for Adding Accounts Back in Iteration {i}: {:?}", elapsed_add_back);
+
+        let final_combined_hash_hex = LtHash::out(&combined_hash);
+        println!("Final Combined Hash after Iteration {i} (first 16 chars): {}", final_combined_hash_hex);
+
+        if initial_combined_hash_hex == final_combined_hash_hex {
+            println!("Iteration {i} Verification: PASS ✅");
+        } else {
+            println!("Iteration {i} Verification: FAIL ❌");
+        }
     }
 }
 

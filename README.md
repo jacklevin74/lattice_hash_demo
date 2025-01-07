@@ -3,7 +3,7 @@
 Simple demo benchmarking of a 2048-byte lattice hash using the `@noble/hashes` BLAKE3 implementation.
 Reference SIMD 0215: https://github.com/solana-foundation/solana-improvement-documents/blob/main/proposals/0215-accounts-lattice-hash.md
 
-## Installation
+## Installation and Running
 
 ```bash
 # Clone the repository
@@ -29,7 +29,9 @@ Final Combined Hash (first 16 chars): e0a5f6b3e1fa4b1a
 
 Verification: PASS ✅
 
-# If you want to run demo in RUST 
+# If you want to run demo in RUST
+# Note Rust program will also test shuffling of accounts before add/remove test
+# verifying final hashes
 
 0. cd rust/lattice_hash_demo
 

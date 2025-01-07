@@ -1,6 +1,7 @@
 # Little Lattice Hash Demo
 
 Simple demo benchmarking of a 2048-byte lattice hash using the `@noble/hashes` BLAKE3 implementation.
+Reference SIMD 0215: https://github.com/solana-foundation/solana-improvement-documents/blob/main/proposals/0215-accounts-lattice-hash.md
 
 ## Installation
 

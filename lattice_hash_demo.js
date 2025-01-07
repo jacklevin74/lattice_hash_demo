@@ -1,14 +1,14 @@
-const crypto = require("crypto");
-const blake3 = require("blake3");
-const bs58 = require("bs58");
+const { blake3 } = require('@noble/hashes/blake3');
+const { bytesToHex } = require('@noble/hashes/utils');
+const bs58 = require('bs58');
 
 class LtHash {
   constructor() {
-    this.hasher = blake3.createHash();
+    this.hasher = blake3.create({});
   }
 
   init() {
-    this.hasher = blake3.createHash();
+    this.hasher = blake3.create({});
   }
 
   append(data) {
@@ -16,7 +16,18 @@ class LtHash {
   }
 
   fini() {
-    return this.hasher.digest({ length: 2048 }); // 2048-byte hash
+    // Simulating 2048-byte XOF by creating multiple 32-byte chunks
+    let fullOutput = [];
+    let tempHash = this.hasher.digest(); // Get the initial digest (32 bytes)
+
+    while (fullOutput.length < 2048) {
+      // Rehash the digest to produce more chunks
+      let chunk = blake3(tempHash);
+      fullOutput.push(...chunk);
+      tempHash = chunk; // Set the next input as the previous output
+    }
+
+    return Buffer.from(fullOutput.slice(0, 2048));
   }
 
   static add(a, b) {
@@ -40,19 +51,17 @@ class LtHash {
   }
 
   static out(hash) {
-    const finalHash = blake3.createHash();
-    finalHash.update(hash);
-    return finalHash.digest({ length: 32 }).toString("hex"); // 32-byte final hash
+    return bytesToHex(blake3(hash)).slice(0, 32); // Return 32-byte hex digest
   }
 }
 
 function generateRandomAccount() {
   return {
     lamports: Math.floor(Math.random() * 1e9), // Random lamports value
-    data: crypto.randomBytes(128), // 128 bytes of random data
-    is_executable: Buffer.from([Math.random() < 0.5 ? 1 : 0]), // 1 byte boolean
-    owner: crypto.randomBytes(32), // 32-byte random owner
-    pubkey: bs58.encode(crypto.randomBytes(32)), // base58-encoded public key
+    data: Buffer.from(blake3(new Uint8Array(128))), // Randomized 128-byte data
+    is_executable: Buffer.from([Math.random() < 0.5 ? 1 : 0]), // 1-byte boolean
+    owner: Buffer.from(blake3(new Uint8Array(32))), // 32-byte owner
+    pubkey: bs58.encode(Buffer.from(blake3(new Uint8Array(32)))), // base58 public key
   };
 }
 
@@ -117,3 +126,4 @@ function main(numAccounts) {
 
 const numAccounts = process.argv[2] ? parseInt(process.argv[2]) : 10000;
 main(numAccounts);
+

@@ -28,3 +28,14 @@ Final Combined Hash (first 16 chars): e0a5f6b3e1fa4b1a
 
 Verification: PASS ✅
 
+# If you want to run demo in RUST 
+
+1. Build the project:
+   cargo build --release
+
+2. Run the program:
+   cargo run --release [num_accounts]
+   - Replace [num_accounts] with the number of accounts
+
+Example:
+   cargo run --release 5000

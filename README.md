@@ -30,6 +30,8 @@ Verification: PASS ✅
 
 # If you want to run demo in RUST 
 
+0. cd rust/lattice_hash_demo
+
 1. Build the project:
    cargo build --release
 

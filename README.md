@@ -1,6 +1,3 @@
-Here's the full formatted output you can copy/paste directly:
-
----
 
 # Little Lattice Hash Demo
 

@@ -70,4 +70,16 @@ cargo run --release [num_accounts]
 cargo run --release 5000
 ```
 
+## Running the Demo in Python:
+
+### 1. In project directory install needed modules:
+```bash
+pip3 install base58 blake3 numba
+```
+
+### 2. Run the program
+```bash
+python3 lattice_hash_demo.py
+```
+
 ---
